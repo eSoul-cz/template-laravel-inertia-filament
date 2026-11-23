@@ -1,0 +1,10 @@
+{
+    "layers": [
+        "general",
+        "framework/laravel",
+        "package/mutation-testing",
+        "package/inertia-vue",
+        "package/laravel-inertia",
+        "package/filament"
+    ]
+}
