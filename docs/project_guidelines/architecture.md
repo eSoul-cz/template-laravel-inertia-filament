@@ -54,6 +54,19 @@ The application is a Laravel monolith: business operations are commands and quer
 
 The boundaries inside `App\Domain` (the core, `App\Domain\CQRS` which touches Eloquent, and `App\Domain\Providers`) run through the middle of a layer, so they are enforced by an architecture test that is a named exception in [testing.md](testing.md#architecture-tests).
 
+### Fixing a layer-dependency violation
+
+A violation reported by the layer test ([testing.md](testing.md#architecture-tests)) is fixed by moving code to the layer that may hold it, not by relaxing the rule. The class keeps its name and behaviour; only the namespace changes, and every caller and test moves with it in the same change.
+
+- **A. Persistence or a framework call in the domain core.** The class moves into `App\Domain\CQRS` (for example next to the commands or queries it serves) as a collaborator of the handler that calls it. The pure rules stay in the core: a class is split when it mixes the two, and only the part that touches persistence or the framework moves.
+- **B. A DTO the domain logic works with.** A core class that takes or returns a DTO from `App\Application\Dto` depends on the application layer. Such a DTO is a value object: it moves to `App\Domain\ValueObjects\<Module>` and keeps its shape. Queries MAY still return it; a DTO only a page or exporter receives stays in `App\Application\Dto`.
+- **C. A handler that needs infrastructure other than a model.** Decide by the nature of the dependency:
+  - pure framework glue (no persistence, no side effect) MAY stay in the core where the rules of the layer allow it, including the types a package layer allows;
+  - a helper that persists moves to `App\Domain\CQRS`, as in A;
+  - a side effect (mail, notification, cache or read-model refresh, an external call) goes behind an interface in `App\Application\Contract`; the handler depends on the contract and the infrastructure implements it ([Dependency direction](#dependency-direction)).
+- A listener or other class that dispatches commands belongs to `App\Infrastructure`, not to the core.
+- An exception to the layer rule is the last resort. It is recorded in the project part of this file (what it covers and why) and in the layer test, and a test failure on any other class is fixed by A, B or C.
+
 ## Modules
 
 Module boundaries are namespaces inside the layers, not separate packages. Each module owns its data and exposes behaviour through its commands and queries; other modules ask, they do not reach in. The project lists its modules and what each owns in its architecture ADR (or its plan), not in `CONTEXT.md`. Each external system is one namespace, `Integration\<System>`.
