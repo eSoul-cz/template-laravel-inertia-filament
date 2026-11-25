@@ -26,6 +26,8 @@ docker compose exec laravel php artisan key:generate   # only when APP_KEY in .e
 The first start installs the Composer and pnpm dependencies, waits for the database, runs the migrations and starts php-fpm, the queue listener, the scheduler and Vite. Follow it with `docker compose logs -f laravel`.
 `composer create-project` already copies `.env` and generates the key.
 
+**In a project fresh from the template, commit `pnpm-lock.yaml` after the first start**, which writes it (`composer.lock` is already there). The release image runs `pnpm install --frozen-lockfile` and cannot be built without it. Pull-request builds do not show the gap: their tests run `pnpm install`, which leaves a lockfile in the workspace before the test image is built, so the first failure is the build of `main`.
+
 ## Ports
 
 | Port | Service | Setting |
